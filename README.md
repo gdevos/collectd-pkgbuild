@@ -90,9 +90,9 @@ export TNS_ADMIN=/opt/oracle/tnsadmin
 ```    
 3. Create a /etc/collectd.d/oracle.conf
 
-  Example at https://collectd.org/wiki/index.php/Plugin:Oracle  
-  We use:  
-  `<WiP>`
+  Docs at https://collectd.org/wiki/index.php/Plugin:Oracle  
+  
+  See [collectd-oracle.conf](collectd-oracle.conf) for some basic oracle metrics.
 
 
 Licenses
