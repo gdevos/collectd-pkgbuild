@@ -26,15 +26,18 @@ The build script needs the following before it will work.
 - collectd source RPM
 
 1. Vagrant
+
   I run vagrant on Ubuntu but other Linux or OS-X should work fine.
   Get an recent version at http://vagrantup.com
 
 2. CentOS vagrant box
+
   I use the one from Chef bento project https://github.com/opscode/bento
   CentOS box:
     vagrant box add chef/centos-6.5 http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box
 
 3. Download ora instant client and devel RPMs
+
   The packages are proprietary and behind a login wall so it can't be done by a script
   You can find the packages at:
     http://www.oracle.com/technetwork/topics/linuxx86-64soft-092277.html
@@ -43,9 +46,11 @@ The build script needs the following before it will work.
 
   Grab the oracle-instantclient -basic(lite) and -devel RPMs and place them in the same folder as where the Vagrantfile sits.
 
-4. Get the fedora source RPM for collectd. This is kept up to date but for the latest version of fedora and not EL of course.
+4. Get the fedora source RPM for collectd. 
+
+  This is kept up to date but for the latest version of fedora and not EL of course.
   I used this one: 
-    curl -O http://kojipkgs.fedoraproject.org//packages/collectd/5.4.1/2.fc21/src/collectd-5.4.1-2.fc21.src.rpm
+  curl -O http://kojipkgs.fedoraproject.org//packages/collectd/5.4.1/2.fc21/src/collectd-5.4.1-2.fc21.src.rpm
 
 5. Go, go, go build
 
@@ -61,6 +66,7 @@ The build script needs the following before it will work.
     vagrant destroy
 
 6. Use the RPMs
+
   Install them directly or put them in your local yum repo and let your configuration management tooling do the lifting.
 
 
@@ -68,16 +74,20 @@ Oracle plugin configuration
 ---------------------------
 
 1. Add a monitor user to oracle
+
   <example sql statement here>
 
 2. Add environment variables to collectd startup
-  in /etc/default/collectd:
-     # changes the paths to your local settings
-     export ORACLE_HOME=/opt/oracle/1120
-     export LD_LIBRARY_PATH=/opt/oracle/1120/lib
-     export TNS_ADMIN=/opt/oracle/tnsadmin
 
+  in /etc/default/collectd:
+     
+    > # changes the paths to your local settings
+    > export ORACLE_HOME=/opt/oracle/1120
+    > export LD_LIBRARY_PATH=/opt/oracle/1120/lib
+    > export TNS_ADMIN=/opt/oracle/tnsadmin
+    
 3. Create a /etc/collectd.d/oracle.conf
+
   Example at https://collectd.org/wiki/index.php/Plugin:Oracle
   We use:
   <WiP>
