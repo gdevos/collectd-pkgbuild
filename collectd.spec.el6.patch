@@ -1,0 +1,228 @@
+--- collectd.spec.srpm	2014-04-24 23:10:09.161355144 +0200
++++ collectd.spec.el6	2014-04-24 21:57:26.685392785 +0200
+@@ -1,6 +1,9 @@
+ %global _hardened_build 1
+ %global __provides_exclude_from ^%{_libdir}/collectd/.*\\.so$
+ 
++#%define with_java %(test -z "$JAVA_HOME" ; echo $?)
++%define with_oracle %(test -z "$ORACLE_HOME" ; echo $?)
++
+ Summary: Statistics collection daemon for filling RRD files
+ Name: collectd
+ Version: 5.4.1
+@@ -27,9 +30,9 @@
+ BuildRequires: perl(ExtUtils::Embed)
+ BuildRequires: python-devel
+ BuildRequires: libgcrypt-devel
+-Requires(post):   systemd
+-Requires(preun):  systemd
+-Requires(postun): systemd
++#Requires(post):   systemd
++#Requires(preun):  systemd
++#Requires(postun): systemd
+ 
+ %description
+ collectd is a small daemon written in C for performance.  It reads various
+@@ -265,6 +268,19 @@
+ notifications to a configured email address.
+ 
+ 
++%if %with_oracle
++%package oracle
++Summary:        Oracle DBMS plugin for collectd.
++Group:          System Environment/Daemons
++Requires:       collectd = %{version}-%{release}
++# Oracle is often not RPM managed so autoreq prevents this plugin from installing
++AutoReqProv:    no
++%description oracle
++The Oracle plugin uses OCI to connect to one or more Oracle database systems
++, execute SQL statements on them and read back the result.
++%endif
++
++
+ %package -n perl-Collectd
+ Summary:       Perl bindings for collectd
+ Group:         System Environment/Daemons
+@@ -303,14 +319,14 @@
+ called handlers and database traffic.
+ 
+ 
+-%package rrdcached
+-Summary:       RRDCacheD plugin for collectd
+-Group:         System Environment/Daemons
+-Requires:      collectd = %{version}-%{release}
+-BuildRequires: rrdtool-devel
+-%description rrdcached
+-This plugin uses the RRDtool accelerator daemon, rrdcached(1),
+-to store values to RRD files in an efficient manner.
++#%package rrdcached
++#Summary:       RRDCacheD plugin for collectd
++#Group:         System Environment/Daemons
++#Requires:      collectd = %{version}-%{release}
++#BuildRequires: rrdtool-devel
++#%description rrdcached
++#This plugin uses the RRDtool accelerator daemon, rrdcached(1),
++#to store values to RRD files in an efficient manner.
+ 
+ 
+ %package rrdtool
+@@ -383,14 +399,14 @@
+ This plugin can send data to Riemann.
+ 
+ 
+-%package xmms
+-Summary:       XMMS plugin for collectd
+-Group:         System Environment/Daemons
+-Requires:      collectd = %{version}-%{release}
+-BuildRequires: xmms-devel
+-%description xmms
+-This is a collectd plugin for the XMMS music player.
+-It graphs the bit-rate and sampling rate as you play songs.
++#%package xmms
++#Summary:       XMMS plugin for collectd
++#Group:         System Environment/Daemons
++#Requires:      collectd = %{version}-%{release}
++#BuildRequires: xmms-devel
++#%description xmms
++#This is a collectd plugin for the XMMS music player.
++#It graphs the bit-rate and sampling rate as you play songs.
+ 
+ 
+ %prep
+@@ -401,6 +417,10 @@
+ 
+ 
+ %build
++%if %with_oracle
++export ORACLE_HOME=/usr/lib/oracle/11.2/client64
++export LD_LIBRARY_PATH=/usr/lib/oracle/11.2/client64/lib
++%endif
+ %configure CFLAGS="%{optflags} -DLT_LAZY_OR_NOW='RTLD_LAZY|RTLD_GLOBAL'" \
+     --enable-all-plugins \
+     --disable-static \
+@@ -411,10 +431,10 @@
+     --disable-netapp \
+     --disable-nut \
+     --disable-onewire \
+-    --disable-oracle \
+     --disable-pf \
+     --disable-redis \
+     --disable-routeros \
++    --disable-rrdcached \
+ %ifarch ppc ppc64 sparc sparc64
+     --disable-sensors \
+ %endif
+@@ -423,6 +443,7 @@
+     --disable-tokyotyrant \
+     --disable-write_mongodb \
+     --disable-write_redis \
++    --disable-xmms \
+     --disable-zfs_arc \
+     --with-libiptc \
+     --with-java=%{java_home}/ \
+@@ -437,7 +458,11 @@
+ %{__make} install DESTDIR="%{buildroot}"
+ 
+ %{__install} -Dp -m0644 src/collectd.conf %{buildroot}%{_sysconfdir}/collectd.conf
++%if 0%{?fedora} >= 15
+ %{__install} -Dp -m0644 %{SOURCE3} %{buildroot}%{_unitdir}/collectd.service
++%else
++%{__install} -Dp -m0755 contrib/fedora/init.d-collectd %{buildroot}%{_initrddir}/collectd
++%endif
+ %{__install} -d -m0755 %{buildroot}%{_localstatedir}/lib/collectd/rrd
+ %{__install} -d -m0755 %{buildroot}/%{_datadir}/collectd/collection3/
+ %{__install} -d -m0755 %{buildroot}/%{_sysconfdir}/httpd/conf.d/
+@@ -485,16 +510,42 @@
+ 
+ %post
+ /sbin/ldconfig
+-%systemd_post collectd.service
++if [ $1 -eq 1 ] ; then
++    # Initial installation
++%if 0%{?fedora} >= 15
++    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
++%else
++    /sbin/chkconfig --add collectd
++%endif
++fi
+ 
+ 
+ %preun
+-%systemd_preun collectd.service
++if [ $1 -eq 0 ]; then
++    # Package removal, not upgrade
++%if 0%{?fedora} >= 15
++    /bin/systemctl --no-reload disable collectd.service > /dev/null 2>&1 || :
++    /bin/systemctl stop collectd.service > /dev/null 2>&1 || :
++%else
++    /sbin/service collectd stop &>/dev/null || :
++    /sbin/chkconfig --del collectd
++%endif
++fi
+ 
+ 
+ %postun
+ /sbin/ldconfig
+-%systemd_postun_with_restart collectd.service
++%if 0%{?fedora} >= 15
++/bin/systemctl daemon-reload >/dev/null 2>&1 || :
++%endif
++if [ $1 -ge 1 ] ; then
++    # Package upgrade, not uninstall
++%if 0%{?fedora} >= 15
++    /bin/systemctl try-restart collectd.service >/dev/null 2>&1 || :
++%else
++    /sbin/service collectd condrestart &>/dev/null || :
++%endif
++fi
+ 
+ 
+ %files
+@@ -515,7 +566,11 @@
+ %exclude %{_sysconfdir}/collectd.d/sensors.conf
+ %exclude %{_sysconfdir}/collectd.d/snmp.conf
+ 
++%if 0%{?fedora} >= 15
+ %{_unitdir}/collectd.service
++%else
++%{_initrddir}/collectd
++%endif
+ %{_bindir}/collectd-nagios
+ %{_bindir}/collectdctl
+ %{_bindir}/collectd-tg
+@@ -724,6 +779,13 @@
+ %{_libdir}/collectd/notify_email.so
+ 
+ 
++%if %with_oracle
++%files oracle
++%defattr(-, root, root, -)
++%{_libdir}/collectd/oracle.so
++%endif
++
++
+ %files -n perl-Collectd
+ %doc perl-examples/*
+ %{_libdir}/collectd/perl.so
+@@ -749,8 +811,8 @@
+ %{_datadir}/collectd/postgresql_default.conf
+ 
+ 
+-%files rrdcached
+-%{_libdir}/collectd/rrdcached.so
++#%files rrdcached
++#%{_libdir}/collectd/rrdcached.so
+ 
+ 
+ %files rrdtool
+@@ -792,8 +854,8 @@
+ %{_libdir}/collectd/write_riemann.so
+ 
+ 
+-%files xmms
+-%{_libdir}/collectd/xmms.so
++#%files xmms
++#%{_libdir}/collectd/xmms.so
+ 
+ 
+ %changelog
