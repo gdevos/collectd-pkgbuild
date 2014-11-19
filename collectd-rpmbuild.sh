@@ -42,7 +42,7 @@ fi
 echo "## Some build tools"
 
 # EPEL repo
-rpm -qa | grep -q epel-release-6-8 || yum -y install http://mirror.1000mbps.com/fedora-epel/6/i386/epel-release-6-8.noarch.rpm || bailout "Could not set up EPEL, exiting..."
+rpm -qa | grep -q epel-release-6-8 || yum -y install http://mirror.nl.leaseweb.net/epel/6/i386/epel-release-6-8.noarch.rpm || bailout "Could not set up EPEL, exiting..."
 
 # rpm-build & friends 
 yum -y install rpm-build yum-utils gcc || bailout "Could not install rpmbuildtools"
