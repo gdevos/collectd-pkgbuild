@@ -5,12 +5,13 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+ config.vm.define "centos6" do |centos6|
   # All Vagrant configuration is done here. The most common configuration
   # options are documented and commented below. For a complete reference,
   # please see the online documentation at vagrantup.com.
 
   # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "chef/centos-6.5"
+  centos6.vm.box = "chef/centos-6.5"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -121,5 +122,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   #   chef.validation_client_name = "ORGNAME-validator"
   #
   # Run with a simple bash script for the collectd rpm build
-  config.vm.provision "shell", path: "collectd-rpmbuild.sh"
+  centos6.vm.provision "shell", path: "collectd-rpmbuild-centos6.sh"
+ end
+
+  # rhel/centos7 build
+  config.vm.define "centos7" do |centos7|
+    centos7.vm.box = "chef/centos-7.0"
+    centos7.vm.provision "shell", path: "collectd-rpmbuild-centos7.sh"
+  end
 end

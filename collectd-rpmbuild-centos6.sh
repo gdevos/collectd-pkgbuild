@@ -16,7 +16,7 @@ bailout() {
 echo "## Go fetch dependencies"
 echo "## Oracle RPMs:"
 cd /vagrant
-INSTANTCLIENT=`ls oracle-instantclient*rpm | grep -v devel`
+INSTANTCLIENT=`ls oracle-instantclient12*rpm | grep -v devel`
 
 [ "$INSTANTCLIENT" == "" ] && bailout "No Oracle instant client RPM found, exiting..."
 if ! rpm -qa | grep -v devel | grep -q oracle-instantclient; then
@@ -26,7 +26,7 @@ else
   echo "$INSTANTCLIENT already installed"
 fi
 
-IC_DEVEL=`ls oracle-instantclient*devel*`
+IC_DEVEL=`ls oracle-instantclient12*devel*`
 
 [ "$IC_DEVEL" == "" ] && bailout "No Oracle instant client development RPM found, exiting..."
 
@@ -64,14 +64,14 @@ echo "## Installing all dependencies according to .spec file"
 yum-builddep -y SPECS/collectd.spec || bailout "Could not fetch collectd build dependencies.."
 
 echo "## Funky ora paths. make some links"
-cd /usr/lib/oracle/11.2/client64/
+cd /usr/lib/oracle/12.1/client64/
 mkdir rdbms
 cd rdbms
-sudo ln -s /usr/include/oracle/11.2/client64 public
+sudo ln -s /usr/include/oracle/12.1/client64 public
 
 echo "## Lets build!"
 cd ~/rpmbuild
-export ORACLE_HOME=/usr/lib/oracle/11.2/client64
+export ORACLE_HOME=/usr/lib/oracle/12.1/client64
 rpmbuild -bb SPECS/collectd.spec || bailout "Could not build collectd RPMs"
 
 echo "## Copying RPMs to vagrant dir"

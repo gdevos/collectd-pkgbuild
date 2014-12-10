@@ -1,0 +1,63 @@
+--- collectd.spec.orig	2014-12-10 10:22:53.000000000 +0100
++++ collectd.spec	2014-12-10 10:21:57.000000000 +0100
+@@ -1,6 +1,9 @@
+ %global _hardened_build 1
+ %global __provides_exclude_from ^%{_libdir}/collectd/.*\\.so$
+ 
++# Oracle OCI plugin
++%define with_oracle %(test -z "$ORACLE_HOME" ; echo $?)
++
+ Summary: Statistics collection daemon for filling RRD files
+ Name: collectd
+ Version: 5.4.1
+@@ -234,6 +237,17 @@
+ This plugin uses the ESMTP library to send
+ notifications to a configured email address.
+ 
++%if %with_oracle
++%package oracle
++Summary:        Oracle DBMS plugin for collectd.
++Group:          System Environment/Daemons
++Requires:       collectd = %{version}-%{release}
++# Oracle is often not RPM managed so autoreq prevents this plugin from installing
++AutoReqProv:    no
++%description oracle
++The Oracle plugin uses OCI to connect to one or more Oracle database systems
++, execute SQL statements on them and read back the result.
++%endif
+ 
+ %package -n perl-Collectd
+ Summary:       Perl bindings for collectd
+@@ -333,6 +347,10 @@
+ 
+ 
+ %build
++%if %with_oracle
++export ORACLE_HOME=/usr/lib/oracle/12.1/client64
++export LD_LIBRARY_PATH=/usr/lib/oracle/12.1/client64/lib
++%endif
+ %configure CFLAGS="%{optflags} -DLT_LAZY_OR_NOW='RTLD_LAZY|RTLD_GLOBAL'" \
+     --enable-all-plugins \
+     --disable-static \
+@@ -349,7 +367,6 @@
+     --disable-netapp \
+     --disable-nut \
+     --disable-onewire \
+-    --disable-oracle \
+     --disable-pinba \
+     --disable-pf \
+     --disable-redis \
+@@ -661,6 +678,13 @@
+ %{_libdir}/collectd/notify_email.so
+ 
+ 
++%if %with_oracle
++%files oracle
++%defattr(-, root, root, -)
++%{_libdir}/collectd/oracle.so
++%endif
++
++
+ %files -n perl-Collectd
+ %doc perl-examples/*
+ %{_libdir}/collectd/perl.so

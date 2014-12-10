@@ -2,6 +2,8 @@ collectd-pkgbuild
 =================
 
 This builds a recent version of collectd for CentOS/RHEL 6 and packages it as RPM. 
+For CentOS/RHEL 7 the EPEL repository already carries v5.4.1 of collectd, only without
+the Oracle plugin. So this build script is useful if you need that plugin.
 
 Collectd, https://collectd.org/, grabs all kinds of metrics and saves them or sends them on.
 
@@ -11,7 +13,7 @@ We send it to graphite so we can create dashboards, have nagios alerts, etc.
 We also collect Oracle DBMS metrics to get a better view on what it is doing (wrong).  
 More info at: https://collectd.org/wiki/index.php/Plugin:Oracle
 
-EPEL already has collectd packages but they didn´t work for us because:
+EPEL 6 already has collectd packages but they didn´t work for us because:
 - It's an ancient version without write_graphite and many other cool new features.
 - The Oracle plugin is not included.
 
@@ -32,6 +34,7 @@ The build script needs the following before it will work.
 
 2. CentOS vagrant box
 
+  The `vagrant up` should get the box, otherwise install it by hand:  
   I use the one from Chef bento project https://github.com/opscode/bento  
   CentOS box:
   `vagrant box add chef/centos-6.5 http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box`
@@ -47,16 +50,22 @@ The build script needs the following before it will work.
 
   Grab the oracle-instantclient -basic(lite) and -devel RPMs and place them in the same folder as where the Vagrantfile sits.
 
-4. Get the fedora source RPM for collectd
+4.a CentOS 6:  
+  Get the fedora source RPM for collectd
 
   This is kept up to date but for the latest version of fedora and not EL of course.  
   https://admin.fedoraproject.org/pkgdb/acls/name/collectd  
   I used this one:  
   `curl -O http://kojipkgs.fedoraproject.org//packages/collectd/5.4.1/2.fc21/src/collectd-5.4.1-2.fc21.src.rpm`
 
+4.b CentOS 7:  
+  Source should be installed as part of the next step.  
+
 5. Go, go, go build
 
-    `vagrant up`
+    `vagrant up centos6`  
+    OR  
+    `vagrant up centos7`  
 
   If all goes well it will:
   - set up the centos box
@@ -65,7 +74,7 @@ The build script needs the following before it will work.
   - copy the resulting RPMs in ./rpms/ directory
 
   To clean up:  
-    `vagrant destroy`
+    `vagrant destroy centos6`  `vagrant destroy centos7`  
 
 6. Use the RPMs
 
